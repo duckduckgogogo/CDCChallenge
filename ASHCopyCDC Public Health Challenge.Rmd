@@ -8,10 +8,6 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-install.packages(mosaic)
-install.packages (tidyverse)
-install.packages (usmap)
-install.packages (readxl)
 
 # Load packages
 library(mosaic)  
@@ -127,8 +123,30 @@ ggplot()
 
 opioids2 <- mutate(opioidsCDC, VetsPercent=(VetsNo/StatePopu)*100)
 opioids2 <- select(opioidsCDC, -c(state,StateAbr,FentanylRate))
-pairs(opioids2[c("DeathRate", "HighElevation", "MeanElevation", "MinWage", "VetsNo")])
-pairs(opioids2[c("DeathRate", "DemParty/(DemParty+RepParty)", "RepParty/(DemParty+RepParty)", "MinWage", "VetsNo")])
+
+#mutated graphs: 
+
+#DeathRate, HeroinRate, SyntheticRate -- MeanElevation
+opioids2 <- mutate (opioidsCDC, MeanElevation.sqrt = sqrt(MeanElevation))
+opioids2 <- mutate (opioidsCDC, MeanElevation.sq = MeanElevation^2)
+opioids2 <- mutate (opioidsCDC, MeanElevation.log = log(MeanElevation))
+opioids2 <- mutate (opioidsCDC, MeanElevation.sq = MeanElevation^2)
+opioids2 <- mutate (opioidsCDC, MeanElevation.sq = MeanElevation^2)
+pairs(opioids2[c("DeathRate", "MeanElevation", "MeanElevation.sqrt")])
+
+#DeathRate, HeroinRate, SyntheticRate -- MinWage
+
+#DeathRate, HeroinRate, SyntheticRate -- VetsNo
+
+#DeathRate, HeroinRate, SyntheticRate -- RxRate, OpioidRxRate
+
+#DeathRate, HeroinRate, SyntheticRate -- VeteranUnemp, VeteranPoverty, VeteranDisability
+
+#RxRate, OpioidRxRate -- VeteranUnemp, VeteranPoverty, VeteranDisability
+
+pairs(opioids2[c("DeathRate", "RxRate", "HeroinRate", "SyntheticRate", "OpioidRxRate")])
+pairs(opioids2[c("DeathRate", "MeanElevation", "MinWage", "VetsNo")])
+pairs(opioids2[c("DeathRate", "VeteranUnemp", "VeteranPoverty", "VeteranDisability")])
+pairs(opioids2[c("DeathRate", "RxRate", "HeroinRate", "SyntheticRate", "OpioidRxRate", "MeanElevation", "MinWage", "VetsNo", "VeteranUnemp", "VeteranPoverty", "VeteranDisability")])
+#pairs(opioids2[c("DeathRate", "DemParty/(DemParty+RepParty)", "RepParty/(DemParty+RepParty)", "MinWage", "VetsNo")])
 ```
-
-
