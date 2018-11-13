@@ -95,6 +95,8 @@ cor(VeteranDisability ~ DeathRate, data = opioids2, use = "pairwise.complete.obs
 cor(VeteranDisability.sqrt ~ DeathRate, data = opioids2, use = "pairwise.complete.obs")
 # 0.09417756
 # 0.0859443
+cor (DeathRate ~ RxRate, data = opioids2, use = "pairwise.complete.obs")
+# 0.5339161
 
 ggplot(opioidsCDC, aes(x=DeathRate, y=DemParty/(DemParty+RepParty), col=factor(Region))) +
   xlab("Overdose Death Rates per 100,000") +
@@ -119,19 +121,19 @@ ggplot(opioidsCDC, aes(x=HighElevation, y=DeathRate)) +
   xlab("Highest Elevation by State (feet)") + 
   geom_point()
 
-ggplot(opioidsCDC, aes(x=MeanElevation, y=DeathRate)) +
+ggplot(opioids2, aes(x=MeanElevation.sqrt, y=DeathRate)) +
   ggtitle("") +
   ylab("Overdose Death Rates per 100,000") +
   xlab("Mean Elevation by State (feet)") + 
   geom_point()
 
-ggplot(opioidsCDC, aes(x=MinWage, y=DeathRate)) +
+ggplot(opioids2, aes(x=MinWage.sqrt, y=DeathRate)) +
   ggtitle("") +
   ylab("Overdose Death Rates per 100,000") +
   xlab("Minimum Wage by State ($)") + 
   geom_point()
 
-ggplot(opioidsCDC, aes(x=VeteranDisability, y=DeathRate)) +
+ggplot(opioids2, aes(x=VeteranDisability, y=DeathRate)) +
   ylab("Overdose Death Rates per 100,000") +
   xlab("Disability Rate of Veterans by State") + 
   geom_point()
@@ -223,7 +225,15 @@ pairs(opioids2[c("DeathRate", "VeteranUnemp", "VeteranPoverty", "VeteranDisabili
 pairs(opioids2[c("DeathRate", "RxRate", "HeroinRate", "SyntheticRate", "OpioidRxRate", "MeanElevation", "MinWage", "VetsNo", "VeteranUnemp", "VeteranPoverty", "VeteranDisability")])
 #pairs(opioids2[c("DeathRate", "DemParty/(DemParty+RepParty)", "RepParty/(DemParty+RepParty)", "MinWage", "VetsNo")])
 
-model1 <- lm (DeathRate ~ VeteranUnemp, OpioidRxRate.sqrt, data = opioids2)
+model1 <- lm (DeathRate ~ VeteranUnemp.sqrt + OpioidRxRate.sqrt, data = opioids2)
 summary (model1)
+#
+model2 <- lm (DeathRate ~ VeteranPopu + VeteranUnemp.sqrt + VeteranPoverty.sqrt + VeteranDisability.sqrt, data = opioids2)
+summary (model2)
+#
+
+
+pairs(opioids2[c("DeathRate", "OpioidRxRate", "VeteranPopu", "VeteranUnemp.sqrt", "VeteranPoverty.sqrt", "VeteranDisability.sqrt")])
+pairs(opioids2[c("DeathRate", "OpioidRxRate", "HeroinRate", "SyntheticRate", "VetsNo.sqrt")])
 
 ```
