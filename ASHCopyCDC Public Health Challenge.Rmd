@@ -96,7 +96,7 @@ cor(VeteranDisability.sqrt ~ DeathRate, data = opioids2, use = "pairwise.complet
 # 0.09417756
 # 0.0859443
 cor (DeathRate ~ RxRate, data = opioids2, use = "pairwise.complete.obs")
-# 0.5339161
+# 0.09874413
 
 ggplot(opioidsCDC, aes(x=DeathRate, y=DemParty/(DemParty+RepParty), col=factor(Region))) +
   xlab("Overdose Death Rates per 100,000") +
