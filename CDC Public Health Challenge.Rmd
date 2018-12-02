@@ -12,6 +12,7 @@ output:
 library(mosaic)  
 library(tidyverse)
 library(usmap)
+library(ggplot2)
 library(readxl)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -19,16 +20,19 @@ require(knitr) # knitr settings to control how R chunks work.
 knitr::opts_chunk$set(
   tidy=FALSE,     # display code as typed
   size="small")   # slightly smaller font for code
+```
 
+```{r}
 # Import Opioid Data
-opioidsCDC <- read_xlsx("Opioid FINAL Data Set - CDC Challenge (import to R).xlsx")
+opioidsCDC <- read_excel("Opioid FINAL Data Set - CDC Challenge (import to R).xlsx")
 str(opioidsCDC)
+hospital <- read_excel("CDC data 2.xlsx")
 ```
 
 ## Map of United States
 
 ```{r}
-opioidsCDC <- rename(opioidsCDC, state=State)
+opioidsCDC <- dplyr::rename(opioidsCDC, state=State)
 
 opioidsCDC <- opioidsCDC %>% 
   mutate(sqrtDeathRate=sqrt(DeathRate)) %>% 
@@ -36,6 +40,10 @@ opioidsCDC <- opioidsCDC %>%
 
 plot_usmap(data = opioidsCDC, values = "sqrtDeathRate", lines = "black") + 
   scale_fill_continuous(name = "Sqrt of OD Death Rates \nper 100,000 (2016)", label = scales::comma, high = "#3182bd", low = "#deebf7") + 
+  theme(legend.position = "right")
+
+plot_usmap(data = opioidsCDC, values = "VeteranPercent", lines = "black") + 
+  scale_fill_continuous(name = "Percentage of Veterans \nby State (2016)", label = scales::comma, high = "#3182bd", low = "#deebf7") + 
   theme(legend.position = "right")
 
 plot_usmap(data = opioidsCDC, values = "VeteranPercent", lines = "black") + 
@@ -88,11 +96,10 @@ ggplot(opioidsCDC, aes(x=VeteranDisability, y=DeathRate)) +
   xlab("Disability Rate of Veterans by State") + 
   geom_point()
 
-ggplot()
-
-opioids2 <- mutate(opioidsCDC, VetsPercent=(VetsNo/StatePopu)*100)
+opioids2 <- mutate(opioidsCDC,VetsPercent=(VetsNo/StatePopu)*100)
 opioids2 <- select(opioidsCDC, -c(state,StateAbr,FentanylRate))
 pairs(opioids2[c("DeathRate", "HighElevation", "MeanElevation", "MinWage", "VetsNo")])
+
 pairs(opioids2[c("DeathRate", "DemParty/(DemParty+RepParty)", "RepParty/(DemParty+RepParty)", "MinWage", "VetsNo")])
 ```
 
