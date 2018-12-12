@@ -3,8 +3,8 @@ title: "CDC Public Health Challenge"
 author: "Ashira Mawji, Alison Ortiz Damas, Clara Seo"
 date: "11/10/2018"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -25,7 +25,9 @@ knitr::opts_chunk$set(
 opioidsCDC <- read_csv("http://kcorreia.people.amherst.edu/F1819/GroupL_Opioids.csv") %>%
   mutate(VeteranUnemp2 = as.numeric(gsub("%","",VeteranUnemp))
         , VeteranPoverty2 = as.numeric(gsub("%","",VeteranPoverty))
-        , VeteranDisability2 = as.numeric(gsub("%","",VeteranDisability)))
+        , VeteranDisability2 = as.numeric(gsub("%","",VeteranDisability))
+        , DemRatio = DemParty/(DemParty+RepParty)
+        , RepRatio = RepParty/(DemParty+RepParty))
 str(opioidsCDC)
 ```
 
@@ -39,6 +41,8 @@ str(opioidsCDC)
 ## Introduction
 We aim to alleviate the problem of addiction and overdose - namely opioids - that has been raging across the United States. Opioids are a class of drugs that include narcotics available legally by prescription (oxycodone, hydrocodone, morphine, etc.) as well as illegally (heroin, fentanyl, etc.). Known to produce euphoria in addition to pain relief, opioids are increasingly misused. The opioid crisis has been a hot topic of discussion as it has become the deadliest drug overdose crisis in US history. According to CDC's National Vital Statistics System, more than 115 people in the US die every day after overdosing on opioids. Beyond the impacts on public health, the misuse of and addiction to opioids also affect the social and economic welfare (in terms of costs of healthcare, rehabilitation centers, criminal justice systems, drug prevention programs, etc.). At the national level, President Trump recently signed Congress's bipartisan bill addressing, in his words, the "public health emergency." However, this is only the beginning of addressing the epidemic that plagues our nation today. 
 
+Our research question 
+
 We hope to recommend measures that could take steps toward reducing, and perhaps even help the rapidly evolving opioid epidemic. We believe that by analyzing more obscure environmental and social factors, we can identify overlooked associations with opioid deaths.
 
 \newpage 
@@ -46,14 +50,20 @@ We hope to recommend measures that could take steps toward reducing, and perhaps
 We are using the Multiple Cause of Death (Detailed Mortality) data set made available via the Center for Disease Control and Prevention webpage (https://wonder.cdc.gov/mcd.html). This data provided by the CDC allows us to filter the deaths in the United States using race, age group, geographical location, sex, underlying cause of death, and multiple cause of death. 
 
 We will also use external data to collect information on other variables such as altitude, minimum wage, veteran population, veterinarian population, political affiliation (democratic/republic) of representatives in House of Representative.
-\begin{itemize}
-\item Altitude: http://www.netstate.com/states/tables/state_elevation_state.htm
-\item Minimum Wage: https://www.minimum-wage.org/wage-by-state
-\item Veteran Population (people): https://www.va.gov/vetdata/report.asp
-\item Veterinarian Population (people): https://www.bls.gov/oes/current/oes291131.htm
-\item Political Representative Proportions (people): https://ballotpedia.org/Partisan_composition_of_state_legislatures 
-\item State Population (people): https://www.census.gov/data/tables/2017/demo/popest/state-total.html#par_textimage_1574439295
-\end{itemize}
+
+Altitude: http://www.netstate.com/states/tables/state_elevation_state.htm
+
+Minimum Wage: https://www.minimum-wage.org/wage-by-state
+
+Veteran Population (people): https://www.va.gov/vetdata/report.asp
+
+Veterinarian Population (people): https://www.bls.gov/oes/current/oes291131.htm
+
+Political Representative Proportions (people):   https://ballotpedia.org/Partisan_composition_of_state_legislatures
+
+State Population (people): https://www.census.gov/data/tables/2017/demo/popest/state-total.html#par_textimage_1574439295
+
+
 
 We realized that the CDC had already conducted extensive analyses on the relationship between the opioid crisis and factors such as gender, type of opioid, age, ethnicity, region, and population density. We therefore began focusing on overlooked variables that may be contributing to the opioid crisis. We ran linear regression models on 20+ variables against the rate of opioid-related deaths in each state in order to help us focus our time and resources the most promising variables: mean altitude (feet), democratic or republican representatives by state (democratic representatives/total representatives in the House of Representative), minimum wage (USD), number of veterinarians (people), type of drug responsible for overdoses (prescription opioid, heroin, synthetic), disabled veteran population (people), number of unemployed veterans (people), population of impoverished veterans (people), and total veteran population (people).
 
@@ -101,6 +111,77 @@ plot_usmap(data = opioidsCDC, values = "sqrtDeathRate", lines = "black") +
 plot_usmap(data = opioidsCDC, values = "VeteranPercent", lines = "black") + 
   scale_fill_continuous(name = "Percentage of Veterans \nby State (2016)", label = scales::comma, high = "#3182bd", low = "#deebf7") + 
   theme(legend.position = "right")
+```
+
+## Checking Regression Model Assumptions
+
+```{r}
+#Democrats (Proprotion)
+gf_histogram(~DemRatio, data=opioidsCDC)
+gf_density(~DemRatio, data=opioidsCDC) #unimodal, slightly skewed right
+gf_density(~sqrt(DemRatio), data=opioidsCDC) #unimodal, slightly skewed right
+
+model1<-lm(DemRatio ~ DeathRate, data=opioidsCDC)
+opioidsCDC2 <- opioidsCDC %>%
+  filter(is.na(DemRatio)==FALSE & is.na(DeathRate)==FALSE) %>% 
+  mutate(Residual=resid(model1)
+         , Predicted=predict(model1))
+gf_point(Residual ~ Predicted, data=opioidsCDC2
+         , xlab="Democratic Proportion"
+         , ylab="Residuals") #no apparent pattern, one x-outlier and a few y-outliers
+
+model2<-lm(sqrt(DemRatio) ~ DeathRate, data=opioidsCDC)
+opioidsCDC3 <- opioidsCDC %>%
+  filter(is.na(sqrt(DemRatio))==FALSE & is.na(DeathRate)==FALSE) %>% 
+  mutate(Residual=resid(model1)
+         , Predicted=predict(model1))
+gf_point(Residual ~ Predicted, data=opioidsCDC2
+         , xlab="sqrt of Democratic Proportion"
+         , ylab="Residuals") #no apparent pattern, one x-outlier and a few y-outliers
+
+#Republicans (Proprotion)
+gf_histogram(~RepRatio, data=opioidsCDC)
+gf_density(~RepRatio, data=opioidsCDC) #unimodal, slightly left right
+
+model2<-lm(RepRatio ~ DeathRate, data=opioidsCDC)
+opioidsCDC3 <- opioidsCDC %>%
+  filter(is.na(RepRatio)==FALSE & is.na(DeathRate)==FALSE) %>% 
+  mutate(Residual=resid(model2)
+         , Predicted=predict(model2))
+
+gf_point(Residual ~ Predicted, data=opioidsCDC3
+         , xlab="Republican Proportion"
+         , ylab="Residuals") #no apparent pattern, one x-outlier and a few y-outliers
+
+#Mean Altitude (feet)
+
+
+#Minimum Wage (USD)
+
+
+#Prescription Opioid-Related Deaths (per 100,000 deaths)
+
+
+#Total Veterans
+
+
+#Unemployed Veterans (%)
+
+
+#Impoverished Veteran (%)
+
+
+#Disabled Veterans (%)
+
+
+#Heroin-Related Deaths (per 100,000 deaths)
+
+
+#Synthetic-Related Deaths (per 100,000 deaths)
+
+
+#Veterinarians
+
 ```
 
 ## Correlations
@@ -170,33 +251,82 @@ ggplot(opioidsCDC, aes(x=VeteranDisability2, y=DeathRate)) +
   ylab("Overdose Death Rates per 100,000") +
   xlab("Disability Rate of Veterans by State") + 
   geom_point()
-
-opioids2 <- mutate(opioidsCDC, VetsPercent=(VetsNo/StatePopu)*100)
-opioids2 <- select(opioidsCDC, -c(state,StateAbr,FentanylRate))
-
-###mutated graphs
-#DeathRate, HeroinRate, SyntheticRate, MeanElevation
-opioids2 <- mutate (opioidsCDC, MeanElevation.sqrt = sqrt(MeanElevation)
-                              , MeanElevation.sq = MeanElevation^2
-                              , MeanElevation.log = log(MeanElevation))
-pairs(opioids2[c("DeathRate", "MeanElevation", "MeanElevation.sqrt")])
-
-#DeathRate, HeroinRate, SyntheticRate -- MinWage
-
-#DeathRate, HeroinRate, SyntheticRate -- VetsNo
-
-#DeathRate, HeroinRate, SyntheticRate -- RxRate, OpioidRxRate
-
-#DeathRate, HeroinRate, SyntheticRate -- VeteranUnemp, VeteranPoverty, VeteranDisability
-
-#RxRate, OpioidRxRate -- VeteranUnemp, VeteranPoverty, VeteranDisability
 ```
 
 ## Matrix of Scatterplots - quick overview to find possible correlations
 
 ```{r}
-pairs(opioids2[c("DeathRate", "RxRate", "HeroinRate", "SyntheticRate", "OpioidRxRate")])
+opioids2 <- mutate(opioidsCDC, VetsPercent=(VetsNo/StatePopu)*100)
+opioids2 <- select(opioidsCDC, -c(state,StateAbr,FentanylRate))
+
+###mutated graphs
+#Death Rate vs Mean Elevation
+opioids2 <- mutate (opioidsCDC, MeanElevation.sqrt = sqrt(MeanElevation)
+                              , MeanElevation.sq = MeanElevation^2
+                              , MeanElevation.log = log(MeanElevation))
+pairs(opioids2[c("DeathRate", "MeanElevation", "MeanElevation.sqrt")])
+
+#Death Rate, Heroin Rate, Synthetic Rate -- Mean Elevation
+#Death Rate, Heroin Rate, Synthetic Rate -- MinWage
+#Death Rate, Heroin Rate, Synthetic Rate -- VetsNo
 pairs(opioids2[c("DeathRate", "MeanElevation", "MinWage", "VetsNo")])
-pairs(opioids2[c("DeathRate", "VeteranUnemp2", "VeteranPoverty2", "VeteranDisability2")])
+
+#Death Rate, Heroin Rate, Synthetic Rate -- RxRate, OpioidRxRate
+pairs(opioids2[c("DeathRate", "RxRate", "HeroinRate", "SyntheticRate", "OpioidRxRate")])
+
+#DeathRate, HeroinRate, Synthetic Rate -- VeteranUnemp, VeteranPoverty, VeteranDisability
+pairs(opioids2[c("DeathRate", "VeteranUnemp2", "VeteranPoverty2", "VeteranDisability2")]) 
+
+# RxRate, OpioidRxRate -- VeteranUnemp, VeteranPoverty, VeteranDisability
+pairs(opioids2[c("RxRate", "OpioidRxRate", "VeteranUnemp2", "VeteranPoverty2", "VeteranDisability2")]) 
+
+# all variables
 pairs(opioids2[c("DeathRate", "RxRate", "HeroinRate", "SyntheticRate", "OpioidRxRate", "MeanElevation", "MinWage", "VetsNo", "VeteranUnemp2", "VeteranPoverty2", "VeteranDisability2")])
 ```
+
+## Remove Outliers
+Due to weak correlations in our analysis for the explanatory variables against the opioid death rate, we decided to try exluding a few data points that were obviously outliers (at first glance from the matrix of scatterplots between all the variables). The graph Veteran Disability vs Opioid OD Death Rate appeared to have outliers that were influential, meaning that with the exclusion of such data points the correlation was most likely to strengthen. Intuitively, doing further analysis with this particular explanatory variable makes sense as disabled veterans would visit the hospital (given that they have the VA Hospital) more often than.*** 
+
+```{r}
+# deleted Hawaii, Virginia, Maryland, Delaware (all states with veterans disability rates lower than 0.24)
+library(readxl)
+Mutated_OPIOID_FINAL_DATA <- read_excel("Mutated_OPIOID FINAL DATA.xlsx")
+View(Mutated_OPIOID_FINAL_DATA)
+
+pairs(Mutated_OPIOID_FINAL_DATA[c("DeathRate", "OpioidRxRate", "VeteranDisability", "VetsNo")])
+
+
+####bootstrapping with data including outliers (original)
+
+cor(VeteranDisability ~ DeathRate, data = opioidsCDC, use = "pairwise.complete.obs") 
+#true correlation between Veteran Disability rate and Opioid Overdose Death rate = 0.1696929
+cor(VeteranDisability ~ DeathRate, data=sample(opioidsCDC, replace=TRUE))
+#correlation in one bootstrap sample = 0.03976355
+
+##correlation in 1,000 bootstrap samples
+bootstrap.corr <- do(1000) * cor(VeteranDisability ~ DeathRate, data=sample(opioidsCDC, replace=TRUE)) 
+favstats(~cor, data=bootstrap.corr) 
+#sample statistics on bootstrapped correlations: mean = 0.168363, sd = 0.1283722
+gf_histogram(~cor, data=bootstrap.corr, color="black")
+#histogram of bootstrap distribution: unimodal, symmetric, centered around the mean (0.168)
+quantile(~cor, data=bootstrap.corr, p=c(0.025, 0.975)) 
+#middle 95% of data lie (-0.280, 0.427)
+
+
+####bootstrapping with data excluding outliers
+
+cor(VeteranDisability ~ DeathRate, data = Mutated_OPIOID_FINAL_DATA, use = "pairwise.complete.obs")
+#true correlation between Veteran Disability rate and Opioid Overdose Death rate = 0.246
+cor(VeteranDisability ~ DeathRate, data=sample(Mutated_OPIOID_FINAL_DATA, replace=TRUE)) 
+#correlation in one bootstrap sample = 0.441
+
+#correlation in 1,000 bootstrap samples
+bootstrap.corr2 <- do(1000)*cor(VeteranDisability ~ DeathRate, data=sample(Mutated_OPIOID_FINAL_DATA, replace=TRUE)) 
+favstats(~cor, data=bootstrap.corr2)
+#sample statistics on bootstrapped correlations: mean = 0.233, sd = 0.166
+gf_histogram(~cor, data=bootstrap.corr2, color="black")
+#histogram of bootstrap distribution: unimodal, symmetric, centered around the mean (0.233)
+quantile(~cor, data=bootstrap.corr2, p=c(0.025, 0.975)) 
+#middle 95% of data lie (-0.095, 0.533)
+```
+
